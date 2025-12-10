@@ -14,7 +14,7 @@ Usage:
 import sys,json,os
 from datetime import datetime
 FILE='tasks.json'
-VALID_STATUS={"todo","in-progress","done"}
+VALID_STATUS={"todo","in-progress","done","all"}
 
 def new_iso():
     return datetime.utcnow().replace(microsecond=0).isoformat()+'Z'
@@ -74,10 +74,13 @@ def list_cmd(filter_status=None):
     if filter_status not in VALID_STATUS:
         print("Error: Invalid status. Use one of:",", ".join(VALID_STATUS))
         return
-    tasks=[t for t in tasks if t.get("status")==filter_status]
-    if not tasks:
-        print("No tasks found.")
-        return
+    if filter_status == "all":
+        tasks = tasks
+    else:
+        tasks=[t for t in tasks if t.get("status")==filter_status]
+        if not tasks:
+            print("No tasks found.")
+            return
 
     print(f"{'ID':<4} {'Status':<12} {'Description':<40} {'UpdatedAt'}")
     print("-"*90)
@@ -145,3 +148,47 @@ def mark_cmd(id_str,status):
 
 def usage():
     print(__doc__)
+
+def main(argv):
+    if len(argv)<2:
+        usage() 
+        return
+    cmd=argv[1]
+    if cmd=="add":
+        if len(argv)<3:
+            print("Error: description required. Example: add \"Buy groceries\"")
+            return
+        add_cmd(argv[2])
+    elif cmd=="list":
+        if len(argv)==2:
+            list_cmd()
+        elif len(argv)==3:
+            list_cmd(argv[2])
+        else:
+            print("Error: wrong usage of list.")
+            return
+    elif cmd=="update":
+        if len(argv)<4:
+            print("Error: usage: update <id> \"new description\"")
+            return
+        update_cmd(argv[2],argv[3])
+    elif cmd=="delete":
+        if len(argv)<3:
+            print("Error: usage: delete <id>")
+            return
+        delete_cmd(argv[2])
+    elif cmd=="mark-in-progress":
+        if len(argv)<3:
+            print("Error: usage: mark-in-progress <id>")
+            return
+        mark_cmd(argv[2],"in-progress")
+    elif cmd=="mark-done":
+        if len(argv)<3:
+            print("Error: usage: mark-done <id>")
+            return
+        mark_cmd(argv[2],"done")
+    else:
+        print(f"Error: unknown command '{cmd}'")
+        usage()
+if __name__=="__main__":
+    main(sys.argv)
